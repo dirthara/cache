@@ -2,7 +2,7 @@
 id: installation
 title: Installation
 sidebar_position: 2
-description: Requirements and installation status for Dirthara Cache.
+description: Requirements and installation of Dirthara Cache.
 ---
 
 ## Requirements
@@ -19,6 +19,12 @@ runtime dependencies, the PSR interface packages it implements or uses:
 The package declares that it provides `psr/cache-implementation` and
 `psr/simple-cache-implementation`, so a library that requires either can be
 satisfied by installing Dirthara Cache.
+
+:::note
+`psr/clock` holds only the interface. The cache needs an implementation of
+`Psr\Clock\ClockInterface` to read the current time from, which this package does
+not ship; see [getting started](getting-started.md#2-a-clock).
+:::
 
 ## Package installation
 
