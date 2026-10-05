@@ -8,7 +8,7 @@ use Dirthara\Cache\Contract\CacheStore;
 use Dirthara\Cache\Contract\CacheDriver;
 use Dirthara\Cache\Config\CacheConfiguration;
 
-class MemoryCacheDriver implements CacheDriver
+final readonly class MemoryCacheDriver implements CacheDriver
 {
     public function create(CacheConfiguration $configuration): CacheStore
     {

@@ -8,7 +8,7 @@ use Dirthara\Cache\ValueObject\StoredValue;
 
 interface CacheStore
 {
-    public function get(string $key): StoredValue;
+    public function get(string $key): ?StoredValue;
 
     /**
      * @param list<string> $keys

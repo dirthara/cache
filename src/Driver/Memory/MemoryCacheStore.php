@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Driver\Memory;
 
-use DateTimeImmutable;
 use Dirthara\Cache\Contract\CacheStore;
 use Dirthara\Cache\ValueObject\StoredValue;
 
-class MemoryCacheStore implements CacheStore
+final readonly class MemoryCacheStore implements CacheStore
 {
-    public function get(string $key): StoredValue
+    public function get(string $key): ?StoredValue
     {
         // TODO: Implement get() method.
     }
@@ -20,27 +19,27 @@ class MemoryCacheStore implements CacheStore
         // TODO: Implement getMultiple() method.
     }
 
-    public function put(string $key, mixed $value, ?DateTimeImmutable $expiresAt): void
+    public function put(string $key, mixed $value): bool
     {
         // TODO: Implement put() method.
     }
 
-    public function putMultiple(array $values): void
+    public function putMultiple(array $values): bool
     {
         // TODO: Implement putMultiple() method.
     }
 
-    public function delete(string $key): void
+    public function delete(string $key): bool
     {
         // TODO: Implement delete() method.
     }
 
-    public function deleteMultiple(array $keys): void
+    public function deleteMultiple(array $keys): bool
     {
         // TODO: Implement deleteMultiple() method.
     }
 
-    public function clear(): void
+    public function clear(): bool
     {
         // TODO: Implement clear() method.
     }

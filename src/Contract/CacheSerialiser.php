@@ -8,5 +8,5 @@ interface CacheSerialiser
 {
     public function serialise(mixed $value): string;
 
-    public function unserialise(string $value): mixed;
+    public function deserialise(string $value): mixed;
 }

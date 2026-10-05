@@ -4,4 +4,53 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache;
 
-class SimpleCache {}
+use DateInterval;
+use Psr\SimpleCache\CacheInterface;
+use Psr\Cache\CacheItemPoolInterface;
+
+final readonly class SimpleCache implements CacheInterface
+{
+    public function __construct(
+        private CacheItemPoolInterface $pool,
+    ) {}
+
+    public function get(string $key, mixed $default = null): mixed
+    {
+        // TODO: Implement get() method.
+    }
+
+    public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool
+    {
+        // TODO: Implement set() method.
+    }
+
+    public function delete(string $key): bool
+    {
+        // TODO: Implement delete() method.
+    }
+
+    public function clear(): bool
+    {
+        // TODO: Implement clear() method.
+    }
+
+    public function getMultiple(iterable $keys, mixed $default = null): iterable
+    {
+        // TODO: Implement getMultiple() method.
+    }
+
+    public function setMultiple(iterable $values, DateInterval|int|null $ttl = null): bool
+    {
+        // TODO: Implement setMultiple() method.
+    }
+
+    public function deleteMultiple(iterable $keys): bool
+    {
+        // TODO: Implement deleteMultiple() method.
+    }
+
+    public function has(string $key): bool
+    {
+        // TODO: Implement has() method.
+    }
+}

@@ -8,7 +8,7 @@ use DateInterval;
 use DateTimeInterface;
 use Psr\Cache\CacheItemInterface;
 
-class CacheItem implements CacheItemInterface
+final readonly class CacheItem implements CacheItemInterface
 {
     public function getKey(): string
     {
