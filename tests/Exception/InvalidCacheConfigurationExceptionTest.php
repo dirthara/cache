@@ -55,16 +55,16 @@ final class InvalidCacheConfigurationExceptionTest extends TestCase
     public function it_describes_a_missing_option(): void
     {
         $exception = InvalidCacheConfigurationException::missingOption(
-            "class@anonymous\0/app/src/Job.php:3$0",
+            "class@anonymous\0/app/src/Store.php:3$0",
             "pass\nword",
         );
 
         self::assertSame(
-            'Unable to configure the "class@anonymous\\000/app/src/Job.php:3$0" cache: the option "pass\\nword" is required and has no default.',
+            'Unable to configure the "class@anonymous\\000/app/src/Store.php:3$0" cache: the option "pass\\nword" is required and has no default.',
             $exception->getMessage(),
         );
         self::assertSame(
-            ['driver' => 'class@anonymous\\000/app/src/Job.php:3$0', 'option' => 'pass\\nword'],
+            ['driver' => 'class@anonymous\\000/app/src/Store.php:3$0', 'option' => 'pass\\nword'],
             $exception->context,
         );
     }
@@ -73,19 +73,19 @@ final class InvalidCacheConfigurationExceptionTest extends TestCase
     public function it_describes_an_option_of_the_wrong_type(): void
     {
         $exception = InvalidCacheConfigurationException::invalidOptionType(
-            "class@anonymous\0/app/src/Job.php:3$0",
+            "class@anonymous\0/app/src/Store.php:3$0",
             "pass\nword",
             'string',
             42,
         );
 
         self::assertSame(
-            'Unable to configure the "class@anonymous\\000/app/src/Job.php:3$0" cache: the option "pass\\nword" has to be of type string, int given.',
+            'Unable to configure the "class@anonymous\\000/app/src/Store.php:3$0" cache: the option "pass\\nword" has to be of type string, int given.',
             $exception->getMessage(),
         );
         self::assertSame(
             [
-                'driver' => 'class@anonymous\\000/app/src/Job.php:3$0',
+                'driver' => 'class@anonymous\\000/app/src/Store.php:3$0',
                 'option' => 'pass\\nword',
                 'expected' => 'string',
                 'actual' => 'int',
