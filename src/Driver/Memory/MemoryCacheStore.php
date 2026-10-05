@@ -7,40 +7,71 @@ namespace Dirthara\Cache\Driver\Memory;
 use Dirthara\Cache\Contract\CacheStore;
 use Dirthara\Cache\ValueObject\StoredValue;
 
-final readonly class MemoryCacheStore implements CacheStore
+use function array_key_exists;
+
+final class MemoryCacheStore implements CacheStore
 {
+    /**
+     * @var array<string, StoredValue>
+     */
+    private array $values = [];
+
     public function get(string $key): ?StoredValue
     {
-        // TODO: Implement get() method.
+        return $this->values[$key] ?? null;
     }
 
     public function getMultiple(array $keys): array
     {
-        // TODO: Implement getMultiple() method.
+        $found = [];
+
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $this->values)) {
+                continue;
+            }
+
+            $found[$key] = $this->values[$key];
+        }
+
+        return $found;
     }
 
-    public function put(string $key, mixed $value): bool
+    public function put(string $key, StoredValue $value): bool
     {
-        // TODO: Implement put() method.
+        $this->values[$key] = $value;
+
+        return true;
     }
 
     public function putMultiple(array $values): bool
     {
-        // TODO: Implement putMultiple() method.
+        foreach ($values as $key => $value) {
+            $this->values[$key] = $value;
+        }
+
+        return true;
     }
 
     public function delete(string $key): bool
     {
-        // TODO: Implement delete() method.
+        unset($this->values[$key]);
+
+        return true;
     }
 
     public function deleteMultiple(array $keys): bool
     {
-        // TODO: Implement deleteMultiple() method.
+        foreach ($keys as $key) {
+            unset($this->values[$key]);
+        }
+
+        return true;
     }
 
     public function clear(): bool
     {
-        // TODO: Implement clear() method.
+        $this->values = [];
+
+        return true;
     }
 }

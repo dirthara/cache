@@ -12,6 +12,6 @@ final readonly class MemoryCacheDriver implements CacheDriver
 {
     public function create(CacheConfiguration $configuration): CacheStore
     {
-        // TODO: Implement create() method.
+        return new MemoryCacheStore();
     }
 }
