@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Contract;
 
-interface Serialiser
+interface CacheSerialiser
 {
     public function serialise(mixed $value): string;
 

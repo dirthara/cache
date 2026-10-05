@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Exception;
 
-use Throwable;
+use Psr\Cache\CacheException as PsrCacheException;
+use Psr\SimpleCache\CacheException as PsrSimpleCacheException;
 
-interface CacheException extends Throwable
+interface CacheException extends PsrCacheException, PsrSimpleCacheException
 {
     /**
      * @var array<string, mixed>

@@ -16,4 +16,14 @@ final class CacheDriverRegistry implements CacheDriverRegistryContract
     {
         // TODO: Implement register() method.
     }
+
+    public function has(string $name): bool
+    {
+        // TODO: Implement has() method.
+    }
+
+    public function driver(string $name): CacheDriver
+    {
+        // TODO: Implement driver() method.
+    }
 }

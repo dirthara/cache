@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Serialiser;
 
-use Dirthara\Cache\Contract\Serialiser;
+use Dirthara\Cache\Contract\CacheSerialiser;
 
-class DefaultCacheSerialiser implements Serialiser
+class NativeCacheSerialiser implements CacheSerialiser
 {
     public function serialise(mixed $value): string
     {

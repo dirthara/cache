@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Contract;
 
-use DateTimeImmutable;
 use Dirthara\Cache\ValueObject\StoredValue;
 
 interface CacheStore
@@ -18,19 +17,19 @@ interface CacheStore
      */
     public function getMultiple(array $keys): array;
 
-    public function put(string $key, mixed $value, ?DateTimeImmutable $expiresAt): void;
+    public function put(string $key, StoredValue $value): bool;
 
     /**
      * @param array<string, StoredValue> $values
      */
-    public function putMultiple(array $values): void;
+    public function putMultiple(array $values): bool;
 
-    public function delete(string $key): void;
+    public function delete(string $key): bool;
 
     /**
      * @param list<string> $keys
      */
-    public function deleteMultiple(array $keys): void;
+    public function deleteMultiple(array $keys): bool;
 
-    public function clear(): void;
+    public function clear(): bool;
 }
