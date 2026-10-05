@@ -7,12 +7,13 @@ description: Requirements and installation status for Dirthara Cache.
 
 ## Requirements
 
-PHP 8.5 or later within the PHP 8 series is required. Composer installs its two
-runtime dependencies, the PSR interface packages it implements:
+PHP 8.5 or later within the PHP 8 series is required. Composer installs its three
+runtime dependencies, the PSR interface packages it implements or uses:
 
 | Package | Provides |
 | --- | --- |
 | `psr/cache` `^3.0` | The PSR-6 caching interfaces. |
+| `psr/clock` `^1.0` | The PSR-20 clock interface, which the cache reads the current time from. |
 | `psr/simple-cache` `^3.0` | The PSR-16 simple cache interfaces. |
 
 The package declares that it provides `psr/cache-implementation` and

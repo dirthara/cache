@@ -10,8 +10,8 @@ documentation lives in [`docs`](docs/intro.md) and is published on the Dirthara 
 
 ## Installation
 
-Requires PHP `^8.5` (PHP 8.5 or a later PHP 8 release). Composer installs the runtime dependencies, `psr/cache` and
-`psr/simple-cache`. Install with:
+Requires PHP `^8.5` (PHP 8.5 or a later PHP 8 release). Composer installs the runtime dependencies,
+`psr/cache`, `psr/clock`, and `psr/simple-cache`. Install with:
 
 ```sh
 composer require dirthara/cache

@@ -119,11 +119,11 @@ enabled = false
 [linter.rules.too-many-properties]
 enabled = false
 
-# The package depends on the PSR-6 and PSR-16 interfaces beyond PHP; add a dependency here when the package requires
-# one. Tests may use anything.
+# The package depends on the PSR-6, PSR-16, and PSR-20 interfaces beyond PHP; add a dependency here when the package
+# requires one. Tests may use anything.
 [[guard.perimeter.rules]]
 namespace = "Dirthara\\Cache\\"
-permit = ["@native", "Dirthara\\Cache\\**", "Psr\\Cache\\**", "Psr\\SimpleCache\\**"]
+permit = ["@native", "Dirthara\\Cache\\**", "Psr\\Cache\\**", "Psr\\Clock\\**", "Psr\\SimpleCache\\**"]
 
 [[guard.perimeter.rules]]
 namespace = "Dirthara\\Cache\\Tests\\"
