@@ -107,8 +107,9 @@ $pool->commit();
   store.
 - A deferred item whose expiry has passed by the time it is committed is deleted from the store instead.
 - `save()`, `deleteItem()`, `deleteItems()`, and `clear()` drop the deferred items for the keys they affect.
-- `commit()` returns `false` when the store fails to store or delete any of them. The deferred items are forgotten
-  either way; commit them again to retry.
+- `commit()` returns `false` when the store fails to store or delete any of them. All deferred work is retained
+  on failure; call `commit()` again to retry. Only a successful commit clears it. A retry may repeat a save or deletion
+  that already succeeded during a partially successful attempt.
 - The pool commits the items still deferred when it is destroyed, so they are not lost when the application forgets
   to commit them.
 

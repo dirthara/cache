@@ -8,6 +8,7 @@ use Dirthara\Cache\Contract\CacheStore;
 use Dirthara\Cache\ValueObject\StoredValue;
 use Dirthara\Cache\Driver\Memory\MemoryCacheStore;
 
+use function in_array;
 use function array_map;
 
 final class RecordingCacheStore implements CacheStore
@@ -20,6 +21,12 @@ final class RecordingCacheStore implements CacheStore
     public bool $failing = false;
 
     public bool $throwing = false;
+
+    /** @var list<string> */
+    public array $failingOperations = [];
+
+    /** @var list<string> */
+    public array $throwingOperations = [];
 
     public function __construct(
         public readonly MemoryCacheStore $inner = new MemoryCacheStore(),
@@ -50,7 +57,11 @@ final class RecordingCacheStore implements CacheStore
     {
         $this->record('putMultiple', $values);
 
-        return !$this->failing && $this->inner->putMultiple($values);
+        return (
+            !$this->failing
+            && !in_array('putMultiple', $this->failingOperations, strict: true)
+            && $this->inner->putMultiple($values)
+        );
     }
 
     public function delete(string $key): bool
@@ -64,7 +75,11 @@ final class RecordingCacheStore implements CacheStore
     {
         $this->record('deleteMultiple', $keys);
 
-        return !$this->failing && $this->inner->deleteMultiple($keys);
+        return (
+            !$this->failing
+            && !in_array('deleteMultiple', $this->failingOperations, strict: true)
+            && $this->inner->deleteMultiple($keys)
+        );
     }
 
     public function clear(): bool
@@ -86,7 +101,7 @@ final class RecordingCacheStore implements CacheStore
     {
         $this->calls[] = [$operation, $argument];
 
-        if ($this->throwing) {
+        if ($this->throwing || in_array($operation, $this->throwingOperations, strict: true)) {
             throw new ContextualException('The store is unavailable.');
         }
     }

@@ -192,10 +192,12 @@ final class CachePool implements CacheItemPoolInterface
             $expired[] = (string) $key;
         }
 
-        $this->deferred = [];
-
         $saved = $values === [] || $this->attempt(fn(): bool => $this->store->putMultiple($values));
         $deleted = $expired === [] || $this->attempt(fn(): bool => $this->store->deleteMultiple($expired));
+
+        if ($saved && $deleted) {
+            $this->deferred = [];
+        }
 
         return $saved && $deleted;
     }

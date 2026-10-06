@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\UsesTrait;
 use Dirthara\Cache\Tests\Fixtures\TestClock;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Dirthara\Cache\Exception\HasExceptionContext;
 use Dirthara\Cache\Driver\Memory\MemoryCacheStore;
 use Dirthara\Cache\Serialiser\NativeCacheSerialiser;
@@ -250,6 +251,78 @@ final class CachePoolDeferredTest extends TestCase
         self::assertNotNull($store->inner->get('123'));
         self::assertTrue($pool->commit());
         self::assertNull($store->inner->get('123'));
+    }
+
+    /**
+     * @return iterable<string, array{list<string>, list<string>}>
+     */
+    public static function commitFailures(): iterable
+    {
+        yield 'save returns false' => [['putMultiple'], []];
+        yield 'delete returns false' => [['deleteMultiple'], []];
+        yield 'save throws' => [[], ['putMultiple']];
+        yield 'delete throws' => [[], ['deleteMultiple']];
+    }
+
+    /**
+     * @param list<string> $failing
+     * @param list<string> $throwing
+     */
+    #[Test]
+    #[DataProvider('commitFailures')]
+    public function it_retains_all_deferred_work_after_a_failed_commit_and_retries(
+        array $failing,
+        array $throwing,
+    ): void {
+        $store = new RecordingCacheStore();
+        $pool = $this->pool($store);
+        $pool->save($pool->getItem('deleted')->set('old'));
+        $pool->saveDeferred($pool->getItem('saved')->set('new'));
+        $pool->saveDeferred($pool->getItem('deleted')->set(null)->expiresAfter(0));
+        $store->failingOperations = $failing;
+        $store->throwingOperations = $throwing;
+
+        self::assertFalse($pool->commit());
+        self::assertSame('new', $pool->getItem('saved')->get());
+        self::assertFalse($pool->hasItem('deleted'));
+
+        $store->throwingOperations = [];
+        $store->failingOperations = [];
+        self::assertTrue($pool->commit());
+        self::assertNotNull($store->inner->get('saved'));
+        self::assertNull($store->inner->get('deleted'));
+        $calls = $store->calls;
+        self::assertTrue($pool->commit());
+        self::assertSame($calls, $store->calls);
+    }
+
+    #[Test]
+    public function it_retries_a_failed_commit_when_destroyed(): void
+    {
+        $store = new RecordingCacheStore();
+        $pool = $this->pool($store);
+        $pool->saveDeferred($pool->getItem('saved')->set('new'));
+        $store->failing = true;
+        self::assertFalse($pool->commit());
+        $store->failing = false;
+
+        unset($pool);
+
+        self::assertNotNull($store->inner->get('saved'));
+    }
+
+    #[Test]
+    public function it_handles_a_cache_failure_during_destructor_commit(): void
+    {
+        $store = new RecordingCacheStore();
+        $pool = $this->pool($store);
+        $pool->saveDeferred($pool->getItem('saved')->set('new'));
+        $store->throwing = true;
+
+        unset($pool);
+
+        self::assertNull($store->inner->get('saved'));
+        self::assertSame(['get', 'putMultiple'], $store->operations());
     }
 
     private function pool(RecordingCacheStore $store, ?TestClock $clock = null): CachePool
