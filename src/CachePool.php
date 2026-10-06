@@ -6,6 +6,7 @@ namespace Dirthara\Cache;
 
 use Closure;
 use Generator;
+use DateTimeImmutable;
 use Psr\Clock\ClockInterface;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
@@ -136,16 +137,13 @@ final class CachePool implements CacheItemPoolInterface
 
         unset($this->deferred[$key]);
 
-        if ($item->expiry !== null && $item->expiry <= $this->clock->now()) {
+        if ($this->expired($item->expiry)) {
             return $this->attempt(fn(): bool => $this->store->delete($key));
         }
 
         $stored = $this->stored($item);
 
-        return match (true) {
-            $stored === null => false,
-            default => $this->attempt(fn(): bool => $this->store->put($key, $stored)),
-        };
+        return $stored !== null && $this->persist($key, $stored);
     }
 
     /**
@@ -160,7 +158,7 @@ final class CachePool implements CacheItemPoolInterface
         $key = $item->getKey();
         $this->validate($key);
 
-        if ($item->expiry !== null && $item->expiry <= $this->clock->now()) {
+        if ($this->expired($item->expiry)) {
             $this->deferred[$key] = null;
 
             return true;
@@ -183,7 +181,7 @@ final class CachePool implements CacheItemPoolInterface
         $expired = [];
 
         foreach ($this->deferred as $key => $stored) {
-            if ($stored !== null && !$this->expired($stored)) {
+            if ($stored !== null && !$this->expired($stored->expiresAt)) {
                 $values[$key] = $stored;
 
                 continue;
@@ -217,7 +215,7 @@ final class CachePool implements CacheItemPoolInterface
 
     private function item(string $key, ?StoredValue $stored): CacheItem
     {
-        if ($stored === null || $this->expired($stored)) {
+        if ($stored === null || $this->expired($stored->expiresAt)) {
             return CacheItem::miss($key, $this->clock);
         }
 
@@ -258,6 +256,13 @@ final class CachePool implements CacheItemPoolInterface
         }
     }
 
+    private function persist(string $key, StoredValue $stored): bool
+    {
+        return $this->attempt(fn(): bool => $this->expired($stored->expiresAt)
+            ? $this->store->delete($key)
+            : $this->store->put($key, $stored));
+    }
+
     private function stored(CacheItem $item): ?StoredValue
     {
         try {
@@ -267,9 +272,9 @@ final class CachePool implements CacheItemPoolInterface
         }
     }
 
-    private function expired(StoredValue $stored): bool
+    private function expired(?DateTimeImmutable $expiry): bool
     {
-        return $stored->expiresAt !== null && $stored->expiresAt <= $this->clock->now();
+        return $expiry !== null && $expiry <= $this->clock->now();
     }
 
     /**

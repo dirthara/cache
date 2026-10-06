@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Dirthara\Cache\ValueObject\StoredValue;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\UsesTrait;
+use Dirthara\Cache\Contract\CacheSerialiser;
 use Dirthara\Cache\Tests\Fixtures\TestClock;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -315,6 +316,28 @@ final class CachePoolTest extends TestCase
 
         self::assertFalse($pool->getItem('key')->isHit());
         self::assertNull($pool->getItem('key')->get());
+    }
+
+    #[Test]
+    public function it_deletes_an_item_that_expires_while_its_value_is_serialised(): void
+    {
+        $store = new RecordingCacheStore();
+        $clock = new TestClock();
+        $store->inner->put('key', new StoredValue('s:3:"old";', null));
+        $serialiser = self::createStub(CacheSerialiser::class);
+        $serialiser
+            ->method('serialise')
+            ->willReturnCallback(static function (mixed $value) use ($clock): string {
+                $clock->advance('+2 seconds');
+
+                return new NativeCacheSerialiser()->serialise($value);
+            });
+        $pool = new CachePool($store, $serialiser, $clock);
+        $item = CacheItem::miss('key', $clock)->set('new')->expiresAfter(1);
+
+        self::assertTrue($pool->save($item));
+        self::assertNull($store->inner->get('key'));
+        self::assertSame(['delete'], $store->operations());
     }
 
     private function pool(RecordingCacheStore $store, ?TestClock $clock = null): CachePool
