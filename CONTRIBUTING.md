@@ -125,7 +125,7 @@ Then update the supported versions table below and in
 | --- | --- | --- |
 | `0.1` | 8.5 | Active |
 
-The `0.1` release line provides the cache implementation. Published versions are identified by maintainer-created tags.
+`0.1` is released. Its patch releases are `0.1.x` tags on the `0.1` branch.
 
 ## Before you open a pull request
 
@@ -152,7 +152,6 @@ Your pull request needs:
   the test suite on every supported PHP version.
 - **Full coverage of `src`.** The gate fails the build below 100% line coverage
   and prints the uncovered lines. Cover new code with tests in the pull request that adds it.
-
 - **Documentation that matches.** Behaviour that the [docs](docs) describe is
   updated in the same pull request. See the conventions in
   [CS-6: Documentation](https://github.com/dirthara/coding-standards/blob/main/docs/coding-standards/cs-6-documentation.md).

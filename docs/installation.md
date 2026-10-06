@@ -28,16 +28,11 @@ not ship; see [getting started](getting-started.md#2-a-clock).
 
 ## Package installation
 
-To install a published release, use Composer:
+Install the package with Composer:
 
 ```sh
 composer require dirthara/cache
 ```
-
-:::note
-Published versions are identified by maintainer-created tags. For development
-on the `0.1` branch, use the repository setup below.
-:::
 
 For development, follow the Docker and Composer setup in the repository's
 [README](https://github.com/dirthara/cache#readme). Development tooling

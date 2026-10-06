@@ -4,15 +4,17 @@
 
 # Dirthara Cache
 
-PSR-6 and PSR-16 caching for PHP and the Dirthara framework. The `0.1` release line provides a cache pool, a simple
-cache adapter, storage contracts, and an in-memory driver. Usage documentation lives in [`docs`](docs/intro.md) and is
-published on the Dirthara documentation site at
+PSR-6 and PSR-16 caching for PHP and the Dirthara framework: a cache pool, a simple cache adapter, storage contracts,
+and an in-memory driver.
+
+Usage guides and API documentation live in [`docs`](docs/intro.md), starting with
+[getting started](docs/getting-started.md). They are published on the Dirthara documentation site at
 <https://dirthara.github.io/docs/>, which documents every package in the framework.
 
 ## Installation
 
 Requires PHP `^8.5` (PHP 8.5 or a later PHP 8 release). Composer installs the runtime dependencies,
-`psr/cache`, `psr/clock`, and `psr/simple-cache`. To install a published release:
+`psr/cache`, `psr/clock`, and `psr/simple-cache`. Install with:
 
 ```sh
 composer require dirthara/cache
@@ -101,8 +103,9 @@ The gate requires 100% line coverage of `src` and lists uncovered lines.
 
 ## Contributing
 
-Each supported version has its own branch, beginning with `0.1`; there is no `main`. See [CONTRIBUTING.md](CONTRIBUTING.md) for
-branching, release, and pull request requirements, and [AGENTS.md](AGENTS.md) for agent instructions.
+Each supported version has its own branch, and patch releases are tags on it; there is no `main`. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for branching, release, and pull request requirements, and [AGENTS.md](AGENTS.md)
+for agent instructions.
 
 ## Security
 

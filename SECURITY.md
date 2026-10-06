@@ -2,10 +2,9 @@
 
 ## Supported versions
 
-| Branch | Status |
-| --- | --- |
-| `0.1` | Active |
-| Older | Unsupported |
+| Branch | Releases | Status |
+| --- | --- | --- |
+| `0.1` | 0.1.x | Active |
 
 While the package is pre-1.0, only the latest release line receives fixes.
 
