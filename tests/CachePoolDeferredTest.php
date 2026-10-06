@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Tests;
 
+use function iterator_to_array;
+
 use Dirthara\Cache\CacheItem;
 use Dirthara\Cache\CachePool;
 use PHPUnit\Framework\TestCase;
@@ -57,7 +59,7 @@ final class CachePoolDeferredTest extends TestCase
 
         self::assertSame('Ada', $pool->getItem('user.42')->get());
         self::assertTrue($pool->hasItem('user.42'));
-        self::assertSame('Ada', $pool->getItems(['user.42'])['user.42']->get());
+        self::assertSame('Ada', iterator_to_array($pool->getItems(['user.42']))['user.42']->get());
         self::assertSame(['get'], $store->operations());
     }
 

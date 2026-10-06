@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Tests;
 
+use function iterator_to_array;
+
 use stdClass;
 use Generator;
 use DateInterval;
@@ -177,7 +179,7 @@ final class SimpleCacheTest extends TestCase
 
         self::assertSame(
             ['first' => 1, 'second' => 'missing', 'third' => null],
-            $this->cache->getMultiple(['first', 'second', 'third'], 'missing'),
+            iterator_to_array($this->cache->getMultiple(['first', 'second', 'third'], 'missing')),
         );
     }
 
@@ -187,14 +189,17 @@ final class SimpleCacheTest extends TestCase
         $this->cache->set('first', 1);
         $this->cache->set('second', 2);
 
-        self::assertSame(['first' => 1, 'second' => 2], $this->cache->getMultiple(self::generate(['first', 'second'])));
+        self::assertSame(
+            ['first' => 1, 'second' => 2],
+            iterator_to_array($this->cache->getMultiple(self::generate(['first', 'second']))),
+        );
         self::assertContains(['getMultiple', ['first', 'second']], $this->store->calls);
     }
 
     #[Test]
     public function it_returns_no_values_for_no_keys(): void
     {
-        self::assertSame([], $this->cache->getMultiple([]));
+        self::assertSame([], iterator_to_array($this->cache->getMultiple([])));
     }
 
     #[Test]
@@ -202,7 +207,10 @@ final class SimpleCacheTest extends TestCase
     {
         self::assertTrue($this->cache->setMultiple(['first' => 1, 'second' => 2]));
 
-        self::assertSame(['first' => 1, 'second' => 2], $this->cache->getMultiple(['first', 'second']));
+        self::assertSame(
+            ['first' => 1, 'second' => 2],
+            iterator_to_array($this->cache->getMultiple(['first', 'second'])),
+        );
         self::assertSame(['getMultiple', 'putMultiple', 'getMultiple'], $this->store->operations());
     }
 
@@ -217,7 +225,10 @@ final class SimpleCacheTest extends TestCase
 
         self::assertTrue($this->cache->setMultiple($values));
 
-        self::assertSame(['first' => 3, 'second' => 2], $this->cache->getMultiple(['first', 'second']));
+        self::assertSame(
+            ['first' => 3, 'second' => 2],
+            iterator_to_array($this->cache->getMultiple(['first', 'second'])),
+        );
     }
 
     #[Test]
@@ -226,7 +237,10 @@ final class SimpleCacheTest extends TestCase
         $this->cache->setMultiple(['first' => 1, 'second' => 2], 60);
         $this->clock->advance('+60 seconds');
 
-        self::assertSame(['first' => null, 'second' => null], $this->cache->getMultiple(['first', 'second']));
+        self::assertSame(
+            ['first' => null, 'second' => null],
+            iterator_to_array($this->cache->getMultiple(['first', 'second'])),
+        );
     }
 
     #[Test]
@@ -250,7 +264,7 @@ final class SimpleCacheTest extends TestCase
 
         self::assertSame(
             ['first' => 1, 'closure' => null, 'third' => 3],
-            $this->cache->getMultiple(['first', 'closure', 'third']),
+            iterator_to_array($this->cache->getMultiple(['first', 'closure', 'third'])),
         );
     }
 
@@ -271,7 +285,7 @@ final class SimpleCacheTest extends TestCase
 
         self::assertSame(
             ['first' => null, 'second' => null, 'kept' => 3],
-            $this->cache->getMultiple(['first', 'second', 'kept']),
+            iterator_to_array($this->cache->getMultiple(['first', 'second', 'kept'])),
         );
     }
 
@@ -280,7 +294,7 @@ final class SimpleCacheTest extends TestCase
     {
         self::assertTrue($this->cache->setMultiple(['42' => 'Ada', '7' => 'Grace']));
 
-        self::assertSame([42 => 'Ada', 7 => 'Grace'], $this->cache->getMultiple([42, '7']));
+        self::assertSame([42 => 'Ada', 7 => 'Grace'], iterator_to_array($this->cache->getMultiple([42, '7'])));
         self::assertSame('Ada', $this->cache->get('42'));
         self::assertTrue($this->cache->deleteMultiple([42]));
         self::assertFalse($this->cache->has('42'));
@@ -327,6 +341,23 @@ final class SimpleCacheTest extends TestCase
             self::assertInstanceOf(InvalidCacheKeyException::class, $exception);
             self::assertSame([], $this->store->calls);
         }
+    }
+
+    #[Test]
+    public function it_preserves_numeric_string_keys_in_bulk_results(): void
+    {
+        $this->cache->setMultiple(['123' => 'stored', '0' => null]);
+        $keys = [];
+        $values = [];
+
+        // @mago-expect analysis:mixed-assignment Cache values can have any type
+        foreach ($this->cache->getMultiple(['123', '0', '001', '123'], 'missing') as $key => $value) {
+            $keys[] = $key;
+            $values[] = $value;
+        }
+
+        self::assertSame(['123', '0', '001'], $keys);
+        self::assertSame(['stored', null, 'missing'], $values);
     }
 
     /**

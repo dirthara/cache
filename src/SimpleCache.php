@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache;
 
+use Generator;
 use DateInterval;
 use Psr\Cache\CacheItemInterface;
 use Psr\SimpleCache\CacheInterface;
@@ -56,17 +57,19 @@ final readonly class SimpleCache implements CacheInterface
      *
      * @throws InvalidCacheKeyException
      *
-     * @return array<string, mixed>
+     * @return iterable<string, mixed>
      */
     public function getMultiple(iterable $keys, mixed $default = null): iterable
     {
         $values = [];
+        $strings = [];
 
-        foreach ($this->items($this->keys($keys)) as $key => $item) {
-            $values[$key] = $item->isHit() ? $item->get() : $default;
+        foreach ($this->items($this->keys($keys)) as $item) {
+            $strings[] = $item->getKey();
+            $values[] = $item->isHit() ? $item->get() : $default;
         }
 
-        return $values;
+        return $this->keyedValues($strings, $values);
     }
 
     /**
@@ -109,6 +112,19 @@ final readonly class SimpleCache implements CacheInterface
     public function has(string $key): bool
     {
         return $this->pool->hasItem($key);
+    }
+
+    /**
+     * @param list<string> $keys
+     * @param list<mixed> $values
+     *
+     * @return Generator<string, mixed>
+     */
+    private function keyedValues(array $keys, array $values): Generator
+    {
+        foreach ($keys as $index => $key) {
+            yield $key => $values[$index];
+        }
     }
 
     /**

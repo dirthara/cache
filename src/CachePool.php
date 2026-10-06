@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dirthara\Cache;
 
 use Closure;
+use Generator;
 use Psr\Clock\ClockInterface;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
@@ -27,7 +28,7 @@ final class CachePool implements CacheItemPoolInterface
     private const string RESERVED_CHARACTERS = '{}()/\\@:';
 
     /**
-     * @var array<string, StoredValue>
+     * @var array<array-key, StoredValue>
      */
     private array $deferred = [];
 
@@ -57,19 +58,21 @@ final class CachePool implements CacheItemPoolInterface
      *
      * @throws InvalidCacheKeyException
      *
-     * @return array<string, CacheItem>
+     * @return iterable<string, CacheItem>
      */
     public function getItems(array $keys = []): iterable
     {
         $keys = $this->validateAll($keys);
-        $fetched = $this->fetchMultiple(array_values(array_diff($keys, array_keys($this->deferred))));
+        /** @var list<string> $unfetched */
+        $unfetched = array_values(array_diff($keys, array_keys($this->deferred)));
+        $fetched = $this->fetchMultiple($unfetched);
         $items = [];
 
         foreach ($keys as $key) {
-            $items[$key] = $this->item($key, $this->deferred[$key] ?? $fetched[$key] ?? null);
+            $items[] = $this->item($key, $this->deferred[$key] ?? $fetched[$key] ?? null);
         }
 
-        return $items;
+        return $this->keyedItems($keys, $items);
     }
 
     /**
@@ -173,7 +176,6 @@ final class CachePool implements CacheItemPoolInterface
                 continue;
             }
 
-            // @mago-expect analysis:redundant-cast PHP turns a numeric string key into an integer, which a store must not get
             $expired[] = (string) $key;
         }
 
@@ -183,6 +185,19 @@ final class CachePool implements CacheItemPoolInterface
         $deleted = $expired === [] || $this->attempt(fn(): bool => $this->store->deleteMultiple($expired));
 
         return $saved && $deleted;
+    }
+
+    /**
+     * @param list<string> $keys
+     * @param list<CacheItem> $items
+     *
+     * @return Generator<string, CacheItem>
+     */
+    private function keyedItems(array $keys, array $items): Generator
+    {
+        foreach ($keys as $index => $key) {
+            yield $key => $items[$index];
+        }
     }
 
     private function item(string $key, ?StoredValue $stored): CacheItem
@@ -213,7 +228,7 @@ final class CachePool implements CacheItemPoolInterface
     /**
      * @param list<string> $keys
      *
-     * @return array<string, StoredValue>
+     * @return array<array-key, StoredValue>
      */
     private function fetchMultiple(array $keys): array
     {

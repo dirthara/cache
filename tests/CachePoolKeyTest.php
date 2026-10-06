@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Tests;
 
+use function iterator_to_array;
+
 use Dirthara\Cache\CacheItem;
 use Dirthara\Cache\CachePool;
 use PHPUnit\Framework\TestCase;
@@ -57,7 +59,7 @@ final class CachePoolKeyTest extends TestCase
 
         self::assertTrue($pool->save($pool->getItem($key)->set('value')));
         self::assertSame('value', $pool->getItem($key)->get());
-        self::assertSame('value', $pool->getItems([$key])[$key]->get());
+        self::assertSame('value', iterator_to_array($pool->getItems([$key]))[$key]->get());
         self::assertTrue($pool->deleteItem($key));
     }
 
@@ -99,7 +101,9 @@ final class CachePoolKeyTest extends TestCase
     public static function operations(): iterable
     {
         yield 'getItem' => [static fn(CachePool $pool): mixed => $pool->getItem('user:42')];
-        yield 'getItems' => [static fn(CachePool $pool): mixed => $pool->getItems(['user.1', 'user:42'])];
+        yield 'getItems' => [
+            static fn(CachePool $pool): mixed => iterator_to_array($pool->getItems(['user.1', 'user:42'])),
+        ];
         yield 'hasItem' => [static fn(CachePool $pool): mixed => $pool->hasItem('user:42')];
         yield 'deleteItem' => [static fn(CachePool $pool): mixed => $pool->deleteItem('user:42')];
         yield 'deleteItems' => [static fn(CachePool $pool): mixed => $pool->deleteItems(['user.1', 'user:42'])];
@@ -130,11 +134,30 @@ final class CachePoolKeyTest extends TestCase
     public function it_refuses_a_key_that_is_not_a_string(): void
     {
         try {
-            $this->pool(new RecordingCacheStore())->getItems(['user.1', 42]);
+            iterator_to_array($this->pool(new RecordingCacheStore())->getItems(['user.1', 42]));
             self::fail('A key that is not a string was accepted.');
         } catch (InvalidCacheKeyException $exception) {
             self::assertSame(['type' => 'int'], $exception->context);
         }
+    }
+
+    #[Test]
+    public function it_preserves_numeric_string_keys_in_requested_order(): void
+    {
+        $pool = $this->pool(new RecordingCacheStore());
+        $pool->save($pool->getItem('123')->set('stored'));
+        $pool->saveDeferred($pool->getItem('0')->set('deferred'));
+        $keys = [];
+        $values = [];
+
+        foreach ($pool->getItems(['123', '0', '001', '123']) as $key => $item) {
+            $keys[] = $key;
+            $values[] = $item->get();
+            self::assertSame($key, $item->getKey());
+        }
+
+        self::assertSame(['123', '0', '001'], $keys);
+        self::assertSame(['stored', 'deferred', null], $values);
     }
 
     private function pool(RecordingCacheStore $store, ?TestClock $clock = null): CachePool

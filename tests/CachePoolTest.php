@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dirthara\Cache\Tests;
 
+use function iterator_to_array;
+
 use Dirthara\Cache\CacheItem;
 use Dirthara\Cache\CachePool;
 use PHPUnit\Framework\TestCase;
@@ -180,7 +182,7 @@ final class CachePoolTest extends TestCase
         $pool->save($pool->getItem('third')->set(3));
         $pool->save($pool->getItem('first')->set(1));
 
-        $items = $pool->getItems(['first', 'second', 'third', 'first']);
+        $items = iterator_to_array($pool->getItems(['first', 'second', 'third', 'first']));
 
         self::assertSame(['first', 'second', 'third'], array_keys($items));
         self::assertSame(
@@ -199,7 +201,7 @@ final class CachePoolTest extends TestCase
     {
         $store = new RecordingCacheStore();
 
-        self::assertSame([], $this->pool($store)->getItems());
+        self::assertSame([], iterator_to_array($this->pool($store)->getItems()));
         self::assertSame([], $store->calls);
     }
 
@@ -212,7 +214,7 @@ final class CachePoolTest extends TestCase
         $pool->save($pool->getItem('long')->set('long')->expiresAfter(60));
         $clock->advance('+30 seconds');
 
-        $items = $pool->getItems(['short', 'long']);
+        $items = iterator_to_array($pool->getItems(['short', 'long']));
 
         self::assertFalse($items['short']->isHit());
         self::assertTrue($items['long']->isHit());
@@ -286,7 +288,7 @@ final class CachePoolTest extends TestCase
         $store->throwing = true;
 
         self::assertFalse($pool->getItem('user.42')->isHit());
-        self::assertFalse($pool->getItems(['user.42'])['user.42']->isHit());
+        self::assertFalse(iterator_to_array($pool->getItems(['user.42']))['user.42']->isHit());
         self::assertFalse($pool->hasItem('user.42'));
         self::assertFalse($pool->save($pool->getItem('user.42')->set('Ada')));
         self::assertFalse($pool->deleteItem('user.42'));

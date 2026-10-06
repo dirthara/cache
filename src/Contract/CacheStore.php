@@ -13,14 +13,14 @@ interface CacheStore
     /**
      * @param list<string> $keys
      *
-     * @return array<string, StoredValue>
+     * @return array<array-key, StoredValue>
      */
     public function getMultiple(array $keys): array;
 
     public function put(string $key, StoredValue $value): bool;
 
     /**
-     * @param array<string, StoredValue> $values
+     * @param array<array-key, StoredValue> $values
      */
     public function putMultiple(array $values): bool;
 

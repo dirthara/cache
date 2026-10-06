@@ -12,7 +12,7 @@ use function array_key_exists;
 final class MemoryCacheStore implements CacheStore
 {
     /**
-     * @var array<string, StoredValue>
+     * @var array<array-key, StoredValue>
      */
     private array $values = [];
 
