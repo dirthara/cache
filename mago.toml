@@ -1,8 +1,8 @@
 php-version = "8.5"
 
 [source]
-paths = ["src", "tests"]
-includes = ["vendor"]
+paths = ["src", "tests", "tooling/psr/tests"]
+includes = ["vendor", "tooling/psr/vendor/cache/integration-tests/src"]
 
 # CS-1: 4 spaces and a soft line length of 120 characters.
 [formatter]
@@ -79,7 +79,7 @@ camel = true
 either = false
 # Test methods are snake_case under a #[Test] attribute, which this rule does not recognise: it only treats methods named
 # test* as tests. Their names are left to review.
-exclude = ["tests/"]
+exclude = ["tests/", "tooling/psr/tests/"]
 
 [linter.rules.property-name]
 enabled = true
@@ -158,3 +158,15 @@ target = "class"
 must-be-named = "*Test"
 must-extend = "PHPUnit\\Framework\\TestCase"
 reason = "Test classes are PHPUnit test cases suffixed with Test (CS-3)."
+
+[[guard.structural.rules]]
+on = "Dirthara\\Cache\\Tests\\Fixtures\\Integration\\CachePoolTest"
+target = "class"
+must-extend = "Cache\\IntegrationTests\\CachePoolTest"
+reason = "The PSR-6 fixture extends the external compliance suite."
+
+[[guard.structural.rules]]
+on = "Dirthara\\Cache\\Tests\\Fixtures\\Integration\\SimpleCacheTest"
+target = "class"
+must-extend = "Cache\\IntegrationTests\\SimpleCacheTest"
+reason = "The PSR-16 fixture extends the external compliance suite."

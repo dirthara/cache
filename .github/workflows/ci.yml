@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
+      - name: Install PSR compliance dependencies
+        run: composer --working-dir=tooling/psr install --no-interaction --no-progress
+
       # Mago runs through the image pinned in compose.yaml, so CI and a local
       # checkout always run the same version. Every check runs even when an
       # earlier one fails, which is what scripts/mago.sh does locally.
@@ -91,6 +94,15 @@ jobs:
 
       - name: Install dependencies
         run: docker compose exec -T php composer install --no-interaction --no-progress
+
+      - name: Validate PSR compliance environment
+        run: docker compose exec -T php composer --working-dir=tooling/psr validate --strict
+
+      - name: Install PSR compliance dependencies
+        run: docker compose exec -T php composer --working-dir=tooling/psr install --no-interaction --no-progress
+
+      - name: Run PSR compliance tests
+        run: docker compose exec -T php composer test-psr
 
       # An explicit bash shell runs with pipefail. The default shell does not, so the step would take tee's exit
       # status and pass even when a test fails.

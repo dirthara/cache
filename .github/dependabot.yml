@@ -20,6 +20,17 @@ updates:
         patterns:
           - '*'
 
+  - package-ecosystem: composer
+    directory: /tooling/psr
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      composer-psr:
+        patterns:
+          - '*'
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

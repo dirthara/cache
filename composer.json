@@ -66,10 +66,12 @@
             "@mago",
             "@test-tools",
             "@test-coverage",
-            "@coverage"
+            "@coverage",
+            "@test-psr"
         ],
-        "imports": "@php scripts/sort-imports.php",
-        "imports-check": "@php scripts/sort-imports.php --check",
-        "test-tools": "@php scripts/tests/sort-imports.php"
+        "imports": "@php scripts/sort-imports.php src tests tooling/psr/tests",
+        "imports-check": "@php scripts/sort-imports.php --check src tests tooling/psr/tests",
+        "test-tools": "@php scripts/tests/sort-imports.php",
+        "test-psr": "@composer --working-dir=tooling/psr test"
     }
 }

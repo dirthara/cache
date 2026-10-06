@@ -3,3 +3,5 @@
 vendor
 .phpunit.cache
 build
+tooling/psr/vendor
+tooling/psr/.phpunit.cache
