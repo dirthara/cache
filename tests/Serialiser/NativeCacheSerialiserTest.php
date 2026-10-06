@@ -15,9 +15,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Dirthara\Cache\Exception\HasExceptionContext;
 use Dirthara\Cache\Serialiser\NativeCacheSerialiser;
+use Dirthara\Cache\Tests\Fixtures\PrivateCachedValue;
 use Dirthara\Cache\Exception\CacheSerialisationException;
+use Dirthara\Cache\Tests\Fixtures\SerialisationErrorValue;
 
 use function serialize;
+use function unserialize;
 use function set_error_handler;
 use function restore_error_handler;
 
@@ -147,11 +150,15 @@ final class NativeCacheSerialiserTest extends TestCase
     }
 
     #[Test]
-    public function it_lets_an_error_thrown_while_restoring_an_object_through_unchanged(): void
+    public function it_wraps_an_error_thrown_while_restoring_an_object(): void
     {
-        $this->expectException(Error::class);
-
-        new NativeCacheSerialiser()->deserialise('O:17:"DateTimeImmutable":1:{s:4:"date";i:1;}');
+        try {
+            new NativeCacheSerialiser()->deserialise('O:17:"DateTimeImmutable":1:{s:4:"date";i:1;}');
+            self::fail('Invalid native object state was accepted.');
+        } catch (CacheSerialisationException $exception) {
+            self::assertInstanceOf(Error::class, $exception->getPrevious());
+            self::assertSame([], $exception->context);
+        }
     }
 
     #[Test]
@@ -172,5 +179,90 @@ final class NativeCacheSerialiserTest extends TestCase
             self::assertStringNotContainsString('secret-reference', $exception->getMessage());
             self::assertSame([], $exception->context);
         }
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function missingClassPayloads(): iterable
+    {
+        $missing = 'O:11:"App\\Removed":0:{}';
+        yield 'an array' => ['a:1:{i:0;' . $missing . '}'];
+        yield 'nested arrays' => ['a:1:{i:0;a:1:{i:0;a:1:{i:0;' . $missing . '}}}'];
+        yield 'an object' => ['O:8:"stdClass":1:{s:5:"child";' . $missing . '}'];
+        yield 'a private property' => ['O:8:"stdClass":1:{s:14:"' . "\0Parent\0hidden" . '";' . $missing . '}'];
+    }
+
+    #[Test]
+    #[DataProvider('missingClassPayloads')]
+    public function it_refuses_missing_classes_anywhere_in_a_value(string $payload): void
+    {
+        $this->expectExceptionObject(CacheSerialisationException::unknownClass());
+
+        new NativeCacheSerialiser()->deserialise($payload);
+    }
+
+    #[Test]
+    public function it_traverses_cyclic_and_repeated_object_graphs(): void
+    {
+        $serialiser = new NativeCacheSerialiser();
+        $parent = new stdClass();
+        $child = new stdClass();
+        $parent->child = $child;
+        $parent->repeated = $child;
+        $child->parent = $parent;
+        // @mago-expect analysis:mixed-assignment The assertion narrows the restored value
+        $restored = $serialiser->deserialise($serialiser->serialise($parent));
+
+        self::assertInstanceOf(stdClass::class, $restored);
+        self::assertSame($restored->child, $restored->repeated);
+        self::assertInstanceOf(stdClass::class, $restored->child);
+        self::assertSame($restored, $restored->child->parent);
+    }
+
+    #[Test]
+    public function it_traverses_arrays_with_cyclic_and_repeated_references(): void
+    {
+        $serialiser = new NativeCacheSerialiser();
+        $value = ['name' => 'Ada'];
+        $value['self'] = &$value;
+        $value['again'] = &$value;
+        // @mago-expect analysis:mixed-assignment The assertion narrows the restored value
+        $restored = $serialiser->deserialise($serialiser->serialise($value));
+
+        self::assertIsArray($restored);
+        self::assertIsArray($restored['self']);
+        self::assertIsArray($restored['self']['again']);
+        self::assertSame('Ada', $restored['self']['again']['name']);
+    }
+
+    #[Test]
+    public function it_wraps_an_error_thrown_while_serialising(): void
+    {
+        $value = new SerialisationErrorValue();
+        try {
+            new NativeCacheSerialiser()->serialise($value);
+            self::fail('A serialisation error escaped.');
+        } catch (CacheSerialisationException $exception) {
+            self::assertInstanceOf(Error::class, $exception->getPrevious());
+        }
+    }
+
+    #[Test]
+    public function it_inspects_private_properties_in_a_real_object(): void
+    {
+        $value = new PrivateCachedValue(unserialize('O:11:"App\\Removed":0:{}'));
+        $this->expectExceptionObject(CacheSerialisationException::unknownClass());
+
+        new NativeCacheSerialiser()->deserialise(serialize($value));
+    }
+
+    #[Test]
+    public function it_finds_a_missing_class_after_a_cyclic_reference(): void
+    {
+        $value = [];
+        $value['self'] = &$value;
+        $value['missing'] = unserialize('O:11:"App\\Removed":0:{}');
+        $this->expectExceptionObject(CacheSerialisationException::unknownClass());
+
+        new NativeCacheSerialiser()->deserialise(serialize($value));
     }
 }

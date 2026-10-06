@@ -20,9 +20,8 @@ scalars, `null`, arrays, enums, and objects with the objects they hold.
 | A payload holding an object of a class that no longer exists | `CacheSerialisationException` |
 
 A [pool](pool.md#when-the-store-fails) turns each of these into a failed save or a miss. A value cached before a class
-was renamed or removed is therefore a miss after a deployment, rather than an unusable `__PHP_Incomplete_Class`. Only
-the value itself is checked: an object of a removed class nested inside an array or another object is restored as
-`__PHP_Incomplete_Class`. The exception never contains the payload.
+was renamed or removed is therefore a miss after a deployment, rather than an unusable `__PHP_Incomplete_Class`. Arrays and object properties are checked recursively, including private properties, with cycles and repeated
+references handled safely. A missing class anywhere in the restored graph invalidates the whole payload. The exception never contains the payload.
 
 :::danger
 Only use `NativeCacheSerialiser` with a store that nothing untrusted can write to.
@@ -36,8 +35,9 @@ object, come back as they were saved. The store is therefore part of the applica
 access to a shared cache, such as a Redis server, as you would protect the application's code.
 :::
 
-A class that throws an `Error` while it is being restored, such as `DateTimeImmutable` given corrupt data, is not
-wrapped in a `CacheSerialisationException`; the `Error` escapes `deserialise()`, and the pool, as it is.
+Failures thrown by native `serialize()` or `unserialize()`, including an `Error` from corrupt native object state,
+are wrapped in `CacheSerialisationException` with the original failure as `previous`. The pool treats an unrestorable
+payload as a miss. This handling is confined to native serialisation; unrelated programmer errors still escape.
 
 Implement `CacheSerialiser` to use another format, such as JSON for values that are only arrays and scalars. A
 serialiser throws an exception that implements `Dirthara\Cache\Exception\CacheException` for a value or payload it

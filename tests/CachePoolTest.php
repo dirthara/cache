@@ -15,6 +15,7 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\Attributes\UsesTrait;
 use Dirthara\Cache\Tests\Fixtures\TestClock;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Dirthara\Cache\Exception\HasExceptionContext;
 use Dirthara\Cache\Driver\Memory\MemoryCacheStore;
 use Dirthara\Cache\Serialiser\NativeCacheSerialiser;
@@ -294,6 +295,26 @@ final class CachePoolTest extends TestCase
         self::assertFalse($pool->deleteItem('user.42'));
         self::assertFalse($pool->deleteItems(['user.42']));
         self::assertFalse($pool->clear());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function unrestorablePayloads(): iterable
+    {
+        yield 'missing class' => ['O:11:"App\\Removed":0:{}'];
+        yield 'nested missing class' => ['a:1:{i:0;O:11:"App\\Removed":0:{}}'];
+        yield 'invalid native object state' => ['O:17:"DateTimeImmutable":1:{s:4:"date";i:1;}'];
+    }
+
+    #[Test]
+    #[DataProvider('unrestorablePayloads')]
+    public function it_treats_unrestorable_values_as_misses(string $payload): void
+    {
+        $store = new RecordingCacheStore();
+        $store->inner->put('key', new StoredValue($payload, null));
+        $pool = $this->pool($store);
+
+        self::assertFalse($pool->getItem('key')->isHit());
+        self::assertNull($pool->getItem('key')->get());
     }
 
     private function pool(RecordingCacheStore $store, ?TestClock $clock = null): CachePool
