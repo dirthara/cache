@@ -17,6 +17,7 @@ use Psr\Cache\InvalidArgumentException as PsrInvalidArgumentException;
 use Psr\SimpleCache\InvalidArgumentException as SimpleCacheInvalidArgumentException;
 
 use function is_int;
+use function array_map;
 use function is_string;
 use function array_keys;
 
@@ -118,7 +119,10 @@ final readonly class SimpleCache implements CacheInterface
 
             $deferred = true;
 
-            foreach ($this->items($this->keys(array_keys($pairs))) as $key => $item) {
+            foreach ($this->items(array_map(
+                static fn(string|int $key): string => (string) $key,
+                array_keys($pairs),
+            )) as $key => $item) {
                 $deferred = $this->pool->saveDeferred($item->set($pairs[$key])->expiresAfter($ttl)) && $deferred;
             }
 
@@ -206,7 +210,11 @@ final readonly class SimpleCache implements CacheInterface
 
         // @mago-expect analysis:mixed-assignment Each key is checked before it is used
         foreach ($keys as $key) {
-            $strings[] = $this->key($key);
+            if (!is_string($key)) {
+                throw InvalidCacheKeyException::notAString($key);
+            }
+
+            $strings[] = $key;
         }
 
         return $strings;

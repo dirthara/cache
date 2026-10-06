@@ -313,9 +313,9 @@ final class SimpleCacheTest extends TestCase
     {
         self::assertTrue($this->cache->setMultiple(['42' => 'Ada', '7' => 'Grace']));
 
-        self::assertSame([42 => 'Ada', 7 => 'Grace'], iterator_to_array($this->cache->getMultiple([42, '7'])));
+        self::assertSame([42 => 'Ada', 7 => 'Grace'], iterator_to_array($this->cache->getMultiple(['42', '7'])));
         self::assertSame('Ada', $this->cache->get('42'));
-        self::assertTrue($this->cache->deleteMultiple([42]));
+        self::assertTrue($this->cache->deleteMultiple(['42']));
         self::assertFalse($this->cache->has('42'));
     }
 
@@ -331,6 +331,12 @@ final class SimpleCacheTest extends TestCase
         yield 'getMultiple' => [static fn(SimpleCache $cache): mixed => $cache->getMultiple(['user.1', 'user{42}'])];
         yield 'setMultiple' => [static fn(SimpleCache $cache): mixed => $cache->setMultiple(['user.1' => 1, '' => 2])];
         yield 'deleteMultiple' => [static fn(SimpleCache $cache): mixed => $cache->deleteMultiple(['user/42'])];
+        yield 'getMultiple with an integer key' => [
+            static fn(SimpleCache $cache): mixed => $cache->getMultiple([123]),
+        ];
+        yield 'deleteMultiple with an integer key' => [
+            static fn(SimpleCache $cache): mixed => $cache->deleteMultiple([123]),
+        ];
         yield 'getMultiple with a key that is not a string' => [
             static fn(SimpleCache $cache): mixed => $cache->getMultiple(['user.1', 1.5]),
         ];
