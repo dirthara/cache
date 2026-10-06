@@ -22,13 +22,14 @@ use function array_diff;
 use function array_keys;
 use function array_unique;
 use function array_values;
+use function array_key_exists;
 
 final class CachePool implements CacheItemPoolInterface
 {
     private const string RESERVED_CHARACTERS = '{}()/\\@:';
 
     /**
-     * @var array<array-key, StoredValue>
+     * @var array<array-key, StoredValue|null>
      */
     private array $deferred = [];
 
@@ -50,7 +51,7 @@ final class CachePool implements CacheItemPoolInterface
     {
         $this->validate($key);
 
-        return $this->item($key, $this->deferred[$key] ?? $this->fetch($key));
+        return $this->item($key, array_key_exists($key, $this->deferred) ? $this->deferred[$key] : $this->fetch($key));
     }
 
     /**
@@ -69,7 +70,10 @@ final class CachePool implements CacheItemPoolInterface
         $items = [];
 
         foreach ($keys as $key) {
-            $items[] = $this->item($key, $this->deferred[$key] ?? $fetched[$key] ?? null);
+            $items[] = $this->item(
+                $key,
+                array_key_exists($key, $this->deferred) ? $this->deferred[$key] : $fetched[$key] ?? null,
+            );
         }
 
         return $this->keyedItems($keys, $items);
@@ -132,11 +136,14 @@ final class CachePool implements CacheItemPoolInterface
 
         unset($this->deferred[$key]);
 
+        if ($item->expiry !== null && $item->expiry <= $this->clock->now()) {
+            return $this->attempt(fn(): bool => $this->store->delete($key));
+        }
+
         $stored = $this->stored($item);
 
         return match (true) {
             $stored === null => false,
-            $this->expired($stored) => $this->attempt(fn(): bool => $this->store->delete($key)),
             default => $this->attempt(fn(): bool => $this->store->put($key, $stored)),
         };
     }
@@ -152,6 +159,12 @@ final class CachePool implements CacheItemPoolInterface
 
         $key = $item->getKey();
         $this->validate($key);
+
+        if ($item->expiry !== null && $item->expiry <= $this->clock->now()) {
+            $this->deferred[$key] = null;
+
+            return true;
+        }
 
         $stored = $this->stored($item);
 
@@ -170,7 +183,7 @@ final class CachePool implements CacheItemPoolInterface
         $expired = [];
 
         foreach ($this->deferred as $key => $stored) {
-            if (!$this->expired($stored)) {
+            if ($stored !== null && !$this->expired($stored)) {
                 $values[$key] = $stored;
 
                 continue;

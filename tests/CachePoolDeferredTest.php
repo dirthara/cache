@@ -229,6 +229,29 @@ final class CachePoolDeferredTest extends TestCase
         self::assertNotNull($store->inner->get('user.42'));
     }
 
+    #[Test]
+    public function it_defers_deletion_without_serialising_and_shadows_the_stored_value(): void
+    {
+        $store = new RecordingCacheStore();
+        $pool = $this->pool($store);
+        $pool->save($pool->getItem('123')->set('old'));
+
+        self::assertTrue($pool->saveDeferred(
+            $pool
+                ->getItem('123')
+                ->set(static fn(): string => 'cannot serialise')
+                ->expiresAfter(0),
+        ));
+        self::assertFalse($pool->hasItem('123'));
+        foreach ($pool->getItems(['123']) as $key => $item) {
+            self::assertSame('123', $key);
+            self::assertFalse($item->isHit());
+        }
+        self::assertNotNull($store->inner->get('123'));
+        self::assertTrue($pool->commit());
+        self::assertNull($store->inner->get('123'));
+    }
+
     private function pool(RecordingCacheStore $store, ?TestClock $clock = null): CachePool
     {
         return new CachePool($store, new NativeCacheSerialiser(), $clock ?? new TestClock());

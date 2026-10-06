@@ -143,6 +143,25 @@ final class SimpleCacheTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('ttlsThatAreNotInTheFuture')]
+    public function it_deletes_an_unserialisable_replacement_before_serialising(DateInterval|int $ttl): void
+    {
+        $this->cache->set('key', 'old');
+
+        self::assertTrue($this->cache->set('key', static fn(): string => 'cannot serialise', $ttl));
+        self::assertFalse($this->cache->has('key'));
+
+        $this->cache->setMultiple(['123' => 'old', 'other' => 'old']);
+
+        self::assertTrue($this->cache->setMultiple([
+            '123' => static fn(): string => 'cannot serialise',
+            'other' => static fn(): string => 'cannot serialise',
+        ], $ttl));
+        self::assertFalse($this->cache->has('123'));
+        self::assertFalse($this->cache->has('other'));
+    }
+
+    #[Test]
     public function it_fails_to_set_a_value_that_cannot_be_serialised(): void
     {
         self::assertFalse($this->cache->set('user.42', static fn(): string => 'Ada'));
