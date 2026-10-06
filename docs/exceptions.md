@@ -34,13 +34,21 @@ These are thrown while an application is being set up, and point to a mistake in
 
 | Exception | Extends | Thrown when |
 | --- | --- | --- |
-| `InvalidCacheKeyException` | `InvalidArgumentException` | A key is empty, contains a reserved character, or is not a string. See [keys](keys.md). |
+| `InvalidCacheKeyException` | `InvalidArgumentException` | A key is invalid, or a foreign PSR-6 pool rejects cache arguments. See [keys](keys.md). |
+| `CachePoolException` | `RuntimeException` | A foreign PSR-6 pool throws a cache failure that needs translation to PSR-16. |
 | `CacheSerialisationException` | `RuntimeException` | A value cannot be serialised, or a payload cannot be deserialised. See [serialisation](serialisation.md). |
 
 `InvalidCacheKeyException` also implements `Psr\Cache\InvalidArgumentException` and
 `Psr\SimpleCache\InvalidArgumentException`. The key it names in its message and context has its control characters
 escaped, so a key cannot forge a line in a log.
 
-A pool and a simple cache only let `InvalidCacheKeyException` escape. They catch a `CacheSerialisationException`, and
-any other `CacheException` from the store, and report it as a miss or as `false`; see
-[when the store fails](pool.md#when-the-store-fails). The serialiser throws it when it is used on its own.
+Dirthara's pool handles `CacheSerialisationException` and other `CacheException` failures from its store or
+serialiser as misses or `false`; see [when the store fails](pool.md#when-the-store-fails). Invalid keys throw.
+The serialiser throws `CacheSerialisationException` when used on its own, including for nested missing classes and
+native restoration failures.
+
+`SimpleCache` can adapt any PSR-6 pool. Foreign PSR-6 cache exceptions are translated to `CachePoolException`, and
+foreign invalid-argument exceptions to `InvalidCacheKeyException`. Both preserve the original as `previous` and
+expose the appropriate PSR-16 interface. Exceptions already implementing the appropriate PSR-16 interface pass
+through unchanged and may be foreign types. Catch `Psr\SimpleCache\CacheException` when adapting an arbitrary pool.
+Unrelated programmer errors are not translated.

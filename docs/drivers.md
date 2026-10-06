@@ -32,7 +32,8 @@ space.
 :::note
 PHP turns a numeric string such as `'42'` into an integer when it is an array key, so the arrays that
 `putMultiple()` receives and `getMultiple()` returns can have integer keys. The lists of keys the pool passes to a
-store always hold strings.
+store always hold strings. The store arrays are typed as `array<array-key, StoredValue>`; PSR-facing bulk reads
+yield string keys from an iterable and preserve their original spelling.
 :::
 
 ## The memory store

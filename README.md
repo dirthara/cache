@@ -4,14 +4,15 @@
 
 # Dirthara Cache
 
-PSR-6 and PSR-16 caching for PHP and the Dirthara framework. This repository is the initial package scaffold; no public API or release is available yet. Usage
-documentation lives in [`docs`](docs/intro.md) and is published on the Dirthara documentation site at
+PSR-6 and PSR-16 caching for PHP and the Dirthara framework. The `0.1` release line provides a cache pool, a simple
+cache adapter, storage contracts, and an in-memory driver. Usage documentation lives in [`docs`](docs/intro.md) and is
+published on the Dirthara documentation site at
 <https://dirthara.github.io/docs/>, which documents every package in the framework.
 
 ## Installation
 
 Requires PHP `^8.5` (PHP 8.5 or a later PHP 8 release). Composer installs the runtime dependencies,
-`psr/cache`, `psr/clock`, and `psr/simple-cache`. Install with:
+`psr/cache`, `psr/clock`, and `psr/simple-cache`. To install a published release:
 
 ```sh
 composer require dirthara/cache
@@ -27,6 +28,7 @@ git clone git@github.com:dirthara/cache.git
 cd cache
 LOCAL_UID=$(id -u) LOCAL_GID=$(id -g) docker compose up -d --build php
 docker compose exec php composer install
+docker compose exec php composer --working-dir=tooling/psr install
 ```
 
 The container runs as the non-root `developer` user. The build arguments `LOCAL_UID` and `LOCAL_GID` default to 1000;
@@ -48,8 +50,14 @@ docker compose exec php composer test
 
 Tests belong in `tests`, under `Dirthara\Cache\Tests`. Source belongs in `src`, under `Dirthara\Cache`.
 
-The package starts with its exception interface, `Dirthara\Cache\Exception\CacheException`, and the
-`HasExceptionContext` trait every exception uses to carry its context, both covered by tests.
+The unit suite covers the implementation and its failure handling. External PSR-6 and PSR-16 behavioural tests run
+in a separate, locked Composer environment with PHPUnit 12; the normal unit suite uses PHPUnit 13:
+
+```sh
+docker compose exec php composer test-psr
+```
+
+See [the compliance environment](tooling/psr/README.md) for its dependencies and coverage of the standards.
 
 ## Code quality
 
@@ -69,7 +77,8 @@ docker compose exec php composer guard
 ```
 
 `composer mago` runs the formatting, import-order, lint, analysis, and configured architecture checks. `composer ci`
-also runs tooling tests, unit tests, and the coverage gate.
+also runs tooling tests, unit tests, the 100% coverage gate, and external PSR compliance tests. Install both Composer
+projects with the development setup above before running it.
 
 Apply formatting and import sorting with `composer fmt`, or include automatic lint fixes with `composer cs`:
 

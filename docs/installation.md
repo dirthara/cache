@@ -28,17 +28,19 @@ not ship; see [getting started](getting-started.md#2-a-clock).
 
 ## Package installation
 
-Once published, install the package using Composer:
+To install a published release, use Composer:
 
 ```sh
 composer require dirthara/cache
 ```
 
-:::caution
-There is no published release yet. The command above describes the intended
-installation after publication.
+:::note
+Published versions are identified by maintainer-created tags. For development
+on the `0.1` branch, use the repository setup below.
 :::
 
 For development, follow the Docker and Composer setup in the repository's
 [README](https://github.com/dirthara/cache#readme). Development tooling
-includes PHPUnit, Mago, and Xdebug.
+includes PHPUnit 13, Mago, and Xdebug. A separate locked Composer environment
+uses PHPUnit 12 for external PSR compliance tests; it does not change the
+package's runtime dependencies.

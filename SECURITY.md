@@ -2,9 +2,9 @@
 
 ## Supported versions
 
-| Version | Status |
+| Branch | Status |
 | --- | --- |
-| 0.1.x | Active development; unreleased |
+| `0.1` | Active |
 | Older | Unsupported |
 
 While the package is pre-1.0, only the latest release line receives fixes.
@@ -22,10 +22,15 @@ advisory crediting the reporter unless they prefer otherwise.
 
 ## Scope
 
-This repository currently contains package infrastructure and no public
-implementation. Report security issues in this package's code or development
-configuration. As the package's behaviour is introduced, update this policy
-with its security boundaries.
+Report security issues in the cache pool, simple cache adapter, drivers,
+serialisers, exception handling, or development configuration.
+
+The native serialiser trusts cached payloads and restores PHP objects, including
+running their restoration hooks. Use it only with stores protected from
+untrusted writers; see [serialisation](docs/serialisation.md). Rejecting malformed
+payloads or missing classes does not make native unserialisation safe for
+untrusted data. Shared backend access controls belong to the driver and the
+application.
 
 Bugs in PHP or third-party dependencies should also be reported upstream.
 Application code and the sensitivity of data an application chooses to store

@@ -23,8 +23,8 @@ $pool->getItem('');                 // throws InvalidCacheKeyException
 
 Every operation that takes a key checks it before touching the store, and throws an `InvalidCacheKeyException` when
 it is invalid. With several keys, one invalid key fails the whole call, and nothing is read, written, or deleted. A key
-that is not a string fails the same way; the [simple cache](simple-cache.md#several-values) accepts integer keys, which
-PHP makes of numeric array keys.
+that is not a string fails the same way. Only `setMultiple()` on the [simple cache](simple-cache.md#several-values)
+accepts integer array keys, which PHP makes of numeric-string keys; bulk lookup and deletion key lists require strings.
 
 `InvalidCacheKeyException` implements both `Psr\Cache\InvalidArgumentException` and
 `Psr\SimpleCache\InvalidArgumentException`, so code written against either standard catches it.

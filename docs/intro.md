@@ -5,8 +5,8 @@ sidebar_position: 1
 description: PSR-6 and PSR-16 caching for PHP and the Dirthara framework.
 ---
 
-Dirthara Cache implements both PHP caching standards: a PSR-6 cache pool, which works with cache items, and a PSR-16
-simple cache, which works with plain keys and values. Code that depends on `Psr\Cache\CacheItemPoolInterface` or
+The `0.1` release line of Dirthara Cache implements both PHP caching standards: a PSR-6 cache pool, which works with
+cache items, and a PSR-16 simple cache, which works with plain keys and values. Code that depends on `Psr\Cache\CacheItemPoolInterface` or
 `Psr\SimpleCache\CacheInterface` can use it without knowing it is there.
 
 The package is storage-neutral. A pool keeps its values in a `CacheStore`, which a named driver creates from
@@ -43,3 +43,6 @@ $cache->set('user.42', $user, 3600);
 [Getting started](getting-started.md) explains each step, including the `$clock`. See
 [installation](installation.md) for the requirements, [keys](keys.md) for which keys are valid, and
 [exceptions](exceptions.md) for every failure the package reports.
+
+The implementation is checked against the external PHP Cache PSR-6 and PSR-16 integration suites as well as its own
+regression tests. See the repository's [testing setup](https://github.com/dirthara/cache#tests).

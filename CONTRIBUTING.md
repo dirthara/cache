@@ -94,7 +94,7 @@ git push origin 0.1.3
 
 A release is gated on a perfect [Plumb](https://plumbphp.dev) score. Every
 package scores 100 before it is tagged; the packaging rules that get it there
-are in [agents/packaging.md](agents/packaging.md).
+are in [CS-8: Packaging](https://github.com/dirthara/coding-standards/blob/main/docs/coding-standards/cs-8-packaging.md).
 
 ```sh
 curl -X POST https://plumbphp.dev/api/v1/packages/dirthara/cache
@@ -125,19 +125,26 @@ Then update the supported versions table below and in
 | --- | --- | --- |
 | `0.1` | 8.5 | Active |
 
-The initial `0.1` scaffold is unreleased.
+The `0.1` release line provides the cache implementation. Published versions are identified by maintainer-created tags.
 
 ## Before you open a pull request
 
-Run everything CI runs:
+Install the normal development dependencies and the isolated compliance environment, then run everything CI runs:
+
+```sh
+docker compose exec php composer install
+docker compose exec php composer --working-dir=tooling/psr install
+docker compose exec php composer validate --strict
+docker compose exec php composer --working-dir=tooling/psr validate --strict
+```
 
 ```sh
 docker compose exec php composer ci
 ```
 
 That is Mago's formatter, linter, analyzer, and architecture rules, then the
-test suite with coverage, then the coverage gate. Start the PHP container with `docker compose up -d php`. CI uses the same
-image. The individual commands are in [README.md](README.md).
+unit suite with coverage, the coverage gate, and the external PSR-6/PSR-16 compliance suite. Start the PHP container
+with `docker compose up -d php`. CI uses the same image. The individual commands are in [README.md](README.md).
 
 Your pull request needs:
 
@@ -148,7 +155,7 @@ Your pull request needs:
 
 - **Documentation that matches.** Behaviour that the [docs](docs) describe is
   updated in the same pull request. See the conventions in
-  [agents/documentation.md](agents/documentation.md).
+  [CS-6: Documentation](https://github.com/dirthara/coding-standards/blob/main/docs/coding-standards/cs-6-documentation.md).
 
 ## Maintainers: protecting a release branch
 

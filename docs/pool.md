@@ -55,13 +55,14 @@ Every value is stored as a serialised copy, so changing an object after saving i
 and each `get()` from a new item returns a new copy.
 
 `getItems()` returns the items keyed by their keys, in the order they were asked for, with a key asked for twice
-returned once. PHP turns a numeric string such as `'42'` into an integer when it is an array key, so the item for
-`'42'` is under the key `42`. `hasItem()` reads and deserialises the value, the same as `getItem()`.
+returned once. Its iterable yields the original string keys, including `'123'`, `'0'`, and `'001'`. Iterate it with
+`foreach`; converting it to a PHP array can turn numeric-string keys into integers. `hasItem()` reads and deserialises
+the value, the same as `getItem()`.
 
 `deleteItem()` and `deleteItems()` succeed for a key without a value.
 
-The pool only saves items it created. `save()` and `saveDeferred()` return `false` for any other implementation of
-`CacheItemInterface`.
+The pool saves Dirthara `CacheItem` objects. `save()` and `saveDeferred()` return `false` for any other
+implementation of `CacheItemInterface`.
 
 ## Expiry
 
@@ -78,7 +79,8 @@ An item without an expiry is kept until it is deleted or the store is cleared. G
 of seconds expires the item at once, and a number of seconds too large for PHP's dates means the item never expires.
 
 An item is expired from the moment its expiry is reached. The pool then treats its value as not found, and saving an
-item whose expiry has already passed deletes the key's value instead of storing it.
+item whose expiry has already passed deletes the key's value before serialising its replacement. Even a closure or
+other unserialisable replacement therefore deletes an existing value when its TTL is non-positive.
 
 :::note
 An item that was found does not carry the expiry it was stored with. Saving it again without setting an expiry stores
@@ -101,17 +103,20 @@ foreach ($users as $user) {
 $pool->commit();
 ```
 
-- The item is serialised when it is deferred. Changing it or the objects in its value afterwards does not change what
-  is committed, and `saveDeferred()` returns `false` for a value that cannot be serialised.
+- An unexpired item is serialised when it is deferred. Changing it or the objects in its value afterwards does not
+  change what is committed, and `saveDeferred()` returns `false` for a value that cannot be serialised.
 - Until it is committed, `getItem()`, `getItems()`, and `hasItem()` return the deferred value without reading the
   store.
+- An item already expired when deferred queues a deletion without serialising its value. That deletion shadows any
+  stored value immediately: reads are misses before `commit()`.
 - A deferred item whose expiry has passed by the time it is committed is deleted from the store instead.
 - `save()`, `deleteItem()`, `deleteItems()`, and `clear()` drop the deferred items for the keys they affect.
 - `commit()` returns `false` when the store fails to store or delete any of them. All deferred work is retained
   on failure; call `commit()` again to retry. Only a successful commit clears it. A retry may repeat a save or deletion
   that already succeeded during a partially successful attempt.
-- The pool commits the items still deferred when it is destroyed, so they are not lost when the application forgets
-  to commit them.
+- The pool attempts to commit outstanding work when destroyed. Its `commit()` handles store cache failures as
+  `false`, so they do not escape the destructor. Explicitly commit and retry while the pool is alive when persistence matters; destroying a pool removes
+  its in-memory retry state.
 
 ## When the store fails
 

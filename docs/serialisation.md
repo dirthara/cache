@@ -20,8 +20,10 @@ scalars, `null`, arrays, enums, and objects with the objects they hold.
 | A payload holding an object of a class that no longer exists | `CacheSerialisationException` |
 
 A [pool](pool.md#when-the-store-fails) turns each of these into a failed save or a miss. A value cached before a class
-was renamed or removed is therefore a miss after a deployment, rather than an unusable `__PHP_Incomplete_Class`. Arrays and object properties are checked recursively, including private properties, with cycles and repeated
-references handled safely. A missing class anywhere in the restored graph invalidates the whole payload. The exception never contains the payload.
+was renamed or removed is therefore a miss after a deployment, rather than an unusable `__PHP_Incomplete_Class`.
+Arrays and object properties are checked recursively, including private properties, with cycles and repeated
+references handled safely. A missing class anywhere in the restored graph invalidates the whole payload.
+The exception never contains the payload.
 
 :::danger
 Only use `NativeCacheSerialiser` with a store that nothing untrusted can write to.
