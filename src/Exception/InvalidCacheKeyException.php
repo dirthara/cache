@@ -29,6 +29,14 @@ final class InvalidCacheKeyException extends InvalidArgumentException implements
         $this->context = $context;
     }
 
+    public static function rejectedByPool(Throwable $previous): self
+    {
+        return new self(
+            message: 'Unable to use the cache arguments: the cache pool rejected them.',
+            previous: $previous,
+        );
+    }
+
     public static function notAString(mixed $key): self
     {
         return new self(

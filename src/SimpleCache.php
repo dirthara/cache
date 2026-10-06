@@ -9,7 +9,12 @@ use DateInterval;
 use Psr\Cache\CacheItemInterface;
 use Psr\SimpleCache\CacheInterface;
 use Psr\Cache\CacheItemPoolInterface;
+use Dirthara\Cache\Exception\CachePoolException;
+use Psr\Cache\CacheException as PsrCacheException;
 use Dirthara\Cache\Exception\InvalidCacheKeyException;
+use Psr\SimpleCache\CacheException as SimpleCacheException;
+use Psr\Cache\InvalidArgumentException as PsrInvalidArgumentException;
+use Psr\SimpleCache\InvalidArgumentException as SimpleCacheInvalidArgumentException;
 
 use function is_int;
 use function is_string;
@@ -22,96 +27,144 @@ final readonly class SimpleCache implements CacheInterface
     ) {}
 
     /**
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     public function get(string $key, mixed $default = null): mixed
     {
-        $item = $this->pool->getItem($key);
+        try {
+            $item = $this->pool->getItem($key);
 
-        return $item->isHit() ? $item->get() : $default;
+            return $item->isHit() ? $item->get() : $default;
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
+        }
     }
 
     /**
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool
     {
-        return $this->pool->save($this->pool->getItem($key)->set($value)->expiresAfter($ttl));
+        try {
+            return $this->pool->save($this->pool->getItem($key)->set($value)->expiresAfter($ttl));
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
+        }
     }
 
     /**
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     public function delete(string $key): bool
     {
-        return $this->pool->deleteItem($key);
+        try {
+            return $this->pool->deleteItem($key);
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
+        }
     }
 
+    /**
+     * @throws SimpleCacheException
+     */
     public function clear(): bool
     {
-        return $this->pool->clear();
+        try {
+            return $this->pool->clear();
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
+        }
     }
 
     /**
      * @param iterable<mixed> $keys
      *
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      *
      * @return iterable<string, mixed>
      */
     public function getMultiple(iterable $keys, mixed $default = null): iterable
     {
-        $values = [];
-        $strings = [];
+        try {
+            $values = [];
+            $strings = [];
 
-        foreach ($this->items($this->keys($keys)) as $item) {
-            $strings[] = $item->getKey();
-            $values[] = $item->isHit() ? $item->get() : $default;
+            foreach ($this->items($this->keys($keys)) as $item) {
+                $strings[] = $item->getKey();
+                $values[] = $item->isHit() ? $item->get() : $default;
+            }
+
+            return $this->keyedValues($strings, $values);
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
         }
-
-        return $this->keyedValues($strings, $values);
     }
 
     /**
      * @param iterable<mixed, mixed> $values
      *
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     public function setMultiple(iterable $values, DateInterval|int|null $ttl = null): bool
     {
-        $pairs = [];
+        try {
+            $pairs = [];
 
-        // @mago-expect analysis:mixed-assignment Each key is checked before it is used
-        // @mago-expect analysis:mixed-assignment A value can be anything the application caches
-        foreach ($values as $key => $value) {
-            $pairs[$this->key($key)] = $value;
+            // @mago-expect analysis:mixed-assignment Each key is checked before it is used
+            // @mago-expect analysis:mixed-assignment A value can be anything the application caches
+            foreach ($values as $key => $value) {
+                $pairs[$this->key($key)] = $value;
+            }
+
+            $deferred = true;
+
+            foreach ($this->items($this->keys(array_keys($pairs))) as $key => $item) {
+                $deferred = $this->pool->saveDeferred($item->set($pairs[$key])->expiresAfter($ttl)) && $deferred;
+            }
+
+            return $this->pool->commit() && $deferred;
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
         }
-
-        $deferred = true;
-
-        foreach ($this->items($this->keys(array_keys($pairs))) as $key => $item) {
-            $deferred = $this->pool->saveDeferred($item->set($pairs[$key])->expiresAfter($ttl)) && $deferred;
-        }
-
-        return $this->pool->commit() && $deferred;
     }
 
     /**
      * @param iterable<mixed> $keys
      *
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     public function deleteMultiple(iterable $keys): bool
     {
-        return $this->pool->deleteItems($this->keys($keys));
+        try {
+            return $this->pool->deleteItems($this->keys($keys));
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
+        }
     }
 
     /**
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     public function has(string $key): bool
     {
-        return $this->pool->hasItem($key);
+        try {
+            return $this->pool->hasItem($key);
+        } catch (PsrCacheException $exception) {
+            throw $this->translated($exception);
+        }
+    }
+
+    private function translated(PsrCacheException $exception): SimpleCacheException
+    {
+        if ($exception instanceof PsrInvalidArgumentException) {
+            return $exception instanceof SimpleCacheInvalidArgumentException
+                ? $exception
+                : InvalidCacheKeyException::rejectedByPool($exception);
+        }
+
+        return $exception instanceof SimpleCacheException
+            ? $exception
+            : CachePoolException::operationFailed($exception);
     }
 
     /**
@@ -130,7 +183,7 @@ final readonly class SimpleCache implements CacheInterface
     /**
      * @param list<string> $keys
      *
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      *
      * @return iterable<string, CacheItemInterface>
      */
@@ -143,7 +196,7 @@ final readonly class SimpleCache implements CacheInterface
     /**
      * @param iterable<mixed> $keys
      *
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      *
      * @return list<string>
      */
@@ -160,7 +213,7 @@ final readonly class SimpleCache implements CacheInterface
     }
 
     /**
-     * @throws InvalidCacheKeyException
+     * @throws SimpleCacheException
      */
     private function key(mixed $key): string
     {
